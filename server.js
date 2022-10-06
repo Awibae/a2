@@ -1,4 +1,4 @@
-var data = require("./data-service");
+var data = require("./data-service.js");
 var express = require("express");
 var app = express();
 app.use(express.static('public'));
@@ -25,5 +25,7 @@ app.get("/managers", function(req, res) {
 app.get("/departments", function(req, res) {
 
 })
+app.get() // this will be for the 404 error
+
 
 app.listen(HTTP_PORT, onHttpStart);

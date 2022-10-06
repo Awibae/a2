@@ -28,7 +28,8 @@ function initialize() {
             }
         })
         if (readSuccess == true) {
-            resolve(employees.includes(isManager == true));
+            resolve(employees.toString());
         }
     })
+    
 }

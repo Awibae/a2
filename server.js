@@ -1,3 +1,4 @@
+var data = require("./data-service");
 var express = require("express");
 var app = express();
 app.use(express.static('public'));
@@ -12,7 +13,7 @@ function onHttpStart(){
 app.get("/", function(req, res){
     res.sendFile(path.join(__dirname, "/views/home.html"));
 })
-app.get("/", function(req, res){
+app.get("/about", function(req, res){
     res.sendFile(path.join(__dirname, "/views/about.html"));
 })
 

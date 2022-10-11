@@ -32,21 +32,21 @@ app.get("/employees", function(req, res) {
     dataservice.getAllEmployees().then(function(employees) {
         res.json(employees);
     }).catch(function(error) {
-        console.log(error);
+        res.json(error);
     });
 })
 app.get("/managers", function(req, res) {
     dataservice.getManagers().then(function(managers) {
         res.json(managers);
     }).catch(function(error) {
-        console.log(error);
+        res.json(error);
     });
 })
 app.get("/departments", function(req, res) {
     dataservice.getDepartments().then(function(departments) {
         res.json(departments);
     }).catch(function(error) {
-        console.log(error);
+        res.json(error);
     });
 })
 app.use((req, res)=> {
@@ -56,6 +56,6 @@ app.use((req, res)=> {
 dataservice.initialize().then(function() {
     app.listen(HTTP_PORT, onHttpStart);
 }).catch(function(error) {
-    console.log(error);
+    res.json(error);
 })
 

@@ -2,7 +2,6 @@ var employees = []
 var departments = [];
 
 var fs = require('fs');
-const { resolve } = require('path');
 
 module.exports.initialize = () => {
     return new Promise(function(resolve, reject) {

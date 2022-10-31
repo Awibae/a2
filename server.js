@@ -16,8 +16,10 @@ app.use(express.static('public'));
 var path = require("path");
 var multer = require("multer");
 var fs = require('fs');
+const { application } = require('express');
+const e = require('express');
 
-var images = [];
+const imagesArray = {images: ""};
 
 const storage = multer.diskStorage({
     destination: "./public/images/uploaded",
@@ -27,6 +29,9 @@ const storage = multer.diskStorage({
 })
 
 const upload = multer({storage : storage});
+
+app.use(express.json());
+app.use(express.urlencoded({extended: true}));
 
 var HTTP_PORT = process.env.PORT || 8080;
 
@@ -43,14 +48,49 @@ app.get("/about", function(req, res){
 })
 
 app.get("/employees", function(req, res) {
-    dataservice.getAllEmployees().then(function(employees) {
-        res.json(employees);
-    }).catch(function(error) {
-        res.json(error);
-    });
+    if (req.query.status) {
+        dataservice.getEmployeesByStatus(req.query["status"]).then(function(statusEmployee) {
+            res.json(statusEmployee);
+        }).catch(function(error) {
+            res.json(error);
+        })
+    }
+    else if (req.query.department) {
+        dataservice.getEmployeesByDepartment(req.query["department"]).then(function(departmentEmployee) {
+            res.json(departmentEmployee);
+        }).catch(function(error) {
+            res.json(error);
+        })
+    }
+    else if (req.query.manager) {
+        dataservice.getEmployeesByManager(req.query["manager"]).then(function(managerEmployee) {
+            res.json(managerEmployee);
+        }).catch(function(error) {
+            res.json(error);
+        })
+    }
+    else {
+        dataservice.getAllEmployees().then(function(employees) {
+            res.json(employees);
+        }).catch(function(error) {
+            res.json(error);
+        });
+    }
 })
 app.get("/employees/add", function(req, res) {
-
+    res.sendFile(path.join(__dirname, "/views/addEmployee.html"))
+})
+app.post("/employees/add", function(req, res) {
+    dataservice.addEmployee(req.body).then(function() {
+        res.redirect("/employees");
+    });
+})
+app.get("/employee/:value", function(req, res) {
+    dataservice.getEmployeeByNum(req.params.value).then(function(employee) {
+        res.json(employee);
+    }).catch(function(error) {
+        res.json(error);
+    })
 })
 
 app.get("/managers", function(req, res) {
@@ -71,20 +111,21 @@ app.get("/departments", function(req, res) {
 
 
 app.get("/images/add", function(req, res) {
-
+    res.sendFile(path.join(__dirname, "/views/addImage.html"));
 })
-app.post("/images/add", upload.single("imageFile", (req, res) => {
-    res.send("/images");
-}))
+app.post("/images/add", upload.single("imageFile"), (req, res) => {
+    res.redirect("/images");
+})
 app.get("/images", function(req, res) {
     fs.readdir("./public/images/uploaded", function(err, items) {
         if (err) {
-            reject("Failure to read file file");
+            reject("Failure to read file");
         }
         else {
-            images = JSON.parse(items);
+            imagesArray.images = JSON.parse(JSON.stringify(items));
         }
     })
+    res.json(imagesArray);
 })
 
 app.use((req, res)=> {

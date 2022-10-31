@@ -67,3 +67,81 @@ module.exports.getDepartments = () => {
         }
     })
 }
+module.exports.addEmployee = (employeeData) => {
+    return new Promise(function(resolve, reject) {
+        if (employeeData.isManager == undefined) {
+            employeeData.isManager = false;
+        }
+        else {
+            employeeData.isManager = true;
+        }
+        employeeData.employeeNum = employees.length + 1;
+        employees[employees.length + 1] = employeeData;
+        resolve();
+    })
+}
+module.exports.getEmployeesByStatus = (status) => {
+    return new Promise(function(resolve, reject) {
+        var statusEmployee = [];
+        for (var i = 0, j = 0; i < employees.length; i++) {
+            if (employees[i].status == status) {
+                statusEmployee[j] = employees[i];
+                j++;
+            }
+        }
+        if (statusEmployee.length <= 0) {
+            reject("No results returned");
+        }
+        else {
+            resolve(statusEmployee);
+        }
+    })
+}
+module.exports.getEmployeesByDepartment = (department) => {
+    return new Promise(function(resolve, reject) {
+        var departmentEmployee = [];
+        for (var i = 0, j = 0; i < employees.length; i++) {
+            if (employees[i].department == department) {
+                departmentEmployee[j] = employees[i];
+                j++;
+            }
+        }
+        if (departmentEmployee.length <= 0) {
+            reject("No results returned");
+        }
+        else {
+            resolve(departmentEmployee);
+        }
+    })
+}
+module.exports.getEmployeesByManager = (manager) => {
+    return new Promise(function(resolve, reject) {
+        var managerEmployee = [];
+        for (var i = 0, j = 0; i < employees.length; i++) {
+            if (employees[i].employeeManagerNum == manager) {
+                managerEmployee[j] = employees[i];
+                j++;
+            }
+        }
+        if (managerEmployee.length <= 0) {
+            reject("No results returned");
+        }
+        else {
+            resolve(managerEmployee);
+        }
+    })
+}
+module.exports.getEmployeeByNum = (num) => {
+    return new Promise(function(resolve, reject) {
+        var numEmployee = employees[0];
+        for (var i = 0; i < employees.length; i++) {
+            if (employees[i].employeeNum == num) {
+                numEmployee = employees[i];
+                resolve(numEmployee);
+            }
+        }
+        if (numEmployee == undefined) {
+            reject("No employee found with this number");
+        }
+    })
+}

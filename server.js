@@ -17,8 +17,36 @@ app.use(express.static('public'));
 var path = require("path");
 var multer = require("multer");
 var fs = require('fs');
-const { application } = require('express');
-const e = require('express');
+var exphbs = require('express-handlebars');
+
+app.engine('.hbs', exphbs.engine({
+    extname: '.hbs',
+    helpers: {
+        navLink: function (url, options){
+            return '<li' +
+            ((url == app.locals.activeRoute) ? ' class="active" ' : '') +
+            '><a href=" ' + url + ' ">' + options.fn(this) + '</a></li>';
+        },
+        equal: function (lvalue, rvalue, options) {
+            if (arguments.length < 3)
+            throw new Error("Handlebars Helper equal needs 2 parameters");
+            if (lvalue != rvalue) {
+            return options.inverse(this);
+            } else {
+            return options.fn(this);
+            }
+        }
+    }
+}));
+
+app.set('view engine', '.hbs');
+
+app.use(function(req,res,next){
+    let route = req.baseUrl + req.path;
+    app.locals.activeRoute = (route == "/") ? "/" : route.replace(/\/$/, "");
+    next();
+});
+
 
 const imagesArray = {images: ""};
 
@@ -41,45 +69,45 @@ function onHttpStart(){
 }
 
 app.get("/", function(req, res){
-    res.sendFile(path.join(__dirname, "/views/home.html"));
+    res.render('home');
 })
 
 app.get("/about", function(req, res){
-    res.sendFile(path.join(__dirname, "/views/about.html"));
+    res.render('about');
 })
 
 app.get("/employees", function(req, res) {
     if (req.query.status) {
         dataservice.getEmployeesByStatus(req.query["status"]).then(function(statusEmployee) {
-            res.json(statusEmployee);
+            res.render("employees", {employees: statusEmployee});
         }).catch(function(error) {
-            res.json(error);
+            res.render("employees",{message: error});
         })
     }
     else if (req.query.department) {
         dataservice.getEmployeesByDepartment(req.query["department"]).then(function(departmentEmployee) {
-            res.json(departmentEmployee);
+            res.render("employees", {employees: departmentEmployee});
         }).catch(function(error) {
-            res.json(error);
+            res.render("employees",{message: error});
         })
     }
     else if (req.query.manager) {
         dataservice.getEmployeesByManager(req.query["manager"]).then(function(managerEmployee) {
-            res.json(managerEmployee);
+            res.render("employees", {employees: managerEmployee});
         }).catch(function(error) {
-            res.json(error);
+            res.render("employees",{message: error});
         })
     }
     else {
         dataservice.getAllEmployees().then(function(employees) {
-            res.json(employees);
+            res.render("employees", {employees: employees});
         }).catch(function(error) {
-            res.json(error);
+            res.render("employees",{message: error});
         });
     }
 })
 app.get("/employees/add", function(req, res) {
-    res.sendFile(path.join(__dirname, "/views/addEmployee.html"))
+    res.render('addEmployee');
 })
 app.post("/employees/add", function(req, res) {
     dataservice.addEmployee(req.body).then(function() {
@@ -88,31 +116,31 @@ app.post("/employees/add", function(req, res) {
 })
 app.get("/employee/:value", function(req, res) {
     dataservice.getEmployeeByNum(req.params.value).then(function(employee) {
-        res.json(employee);
+        res.render("employee", { employee: employee});
+    }).catch(function(error) {
+        res.render("employee",{message: error});
+    })
+})
+app.post("/employee/update", (req, res) => {
+    console.log(req.body);
+    dataservice.updateEmployee(req.body).then(function() {
+        res.redirect("/employees");
     }).catch(function(error) {
         res.json(error);
     })
-})
-
-app.get("/managers", function(req, res) {
-    dataservice.getManagers().then(function(managers) {
-        res.json(managers);
-    }).catch(function(error) {
-        res.json(error);
-    });
-})
+   
+});
 
 app.get("/departments", function(req, res) {
     dataservice.getDepartments().then(function(departments) {
-        res.json(departments);
+        res.render("departments", {departments: departments});
     }).catch(function(error) {
-        res.json(error);
+        res.render("departments",{message: error});
     });
 })
 
-
 app.get("/images/add", function(req, res) {
-    res.sendFile(path.join(__dirname, "/views/addImage.html"));
+    res.render('addImage');
 })
 app.post("/images/add", upload.single("imageFile"), (req, res) => {
     res.redirect("/images");
@@ -123,10 +151,11 @@ app.get("/images", function(req, res) {
             reject("Failure to read file");
         }
         else {
-            imagesArray.images = JSON.parse(JSON.stringify(items));
+            imagesArray.images = JSON.stringify(items);
+            res.render("images", {imagesList: items});
         }
     })
-    res.json(imagesArray);
+    
 })
 
 app.use((req, res)=> {

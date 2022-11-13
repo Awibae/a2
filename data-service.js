@@ -1,6 +1,7 @@
 var employees = []
 var departments = [];
 
+const e = require('express');
 var fs = require('fs');
 
 module.exports.initialize = () => {
@@ -141,6 +142,23 @@ module.exports.getEmployeeByNum = (num) => {
             }
         }
         if (numEmployee == undefined) {
+            reject("No employee found with this number");
+        }
+    })
+}
+module.exports.updateEmployee = (employeeData) => {
+    return new Promise(function(resolve, reject) {
+        for (var i = 0; i < employees.length; i++) {
+            if (employees[i].employeeNum == employeeData.employeeNum) {
+                employees[i] = employeeData;
+                resolve();
+                var uhoh = false;
+            }
+            else {
+                var uhoh = true; // designates an error/no employee with that number
+            }
+        }
+        if (uhoh == true) {
             reject("No employee found with this number");
         }
     })

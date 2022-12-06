@@ -1,16 +1,16 @@
-/*************************************************************************
-* BTI325– Assignment 5
-* I declare that this assignment is my own work in accordance with Seneca Academic Policy.
-No part of this assignment has been copied manually or electronically from any other source.
+/*********************************************************************************
+* BTI325 – Assignment 5
+* I declare that this assignment is my own work in accordance with Seneca Academic Policy. No part
+* of this assignment has been copied manually or electronically from any other source
 * (including 3rd party web sites) or distributed to other students.
 *
 * Name: Alexander Banigan Student ID: 151167202 Date: 2022-11-27
 *
-* Your app’s URL (from Cyclic Heroku) that I can click to see your application: 
-* https://nameless-stream-85589.herokuapp.com/ change this 
+* Online (Heroku Cyclic) Link: https://drab-tan-turkey-coat.cyclic.app/
 *
-*************************************************************************/ 
+********************************************************************************/ 
 var dataservice = require('./data-service.js');
+var dataserviceAuth = require('./data-service-auth.js');
 var express = require("express");
 var app = express();
 app.use(express.static('public'));
@@ -28,7 +28,24 @@ var sequelize = new Sequelize('ztrcubfn', 'ztrcubfn', 'rOvBGIdYfctJ6-Jqdiy6tYttC
     },
     query: { raw: true }
 });
-
+var clientSessions = require("client-sessions");
+app.use(clientSessions({
+    cookieName: "session",
+    secret: "Let'sPlayJazzPianoVolume3",
+    duration: 2 * 60 * 1000,
+    activeDuration: 1000 * 60
+}));
+function ensureLogin(req, res, next) {
+    if (!req.session.user) {
+      res.redirect("/login");
+    } else {
+      next();
+    }
+  }
+app.use(function(req, res, next) {
+    res.locals.session = req.session;
+    next();
+   });
 sequelize
     .authenticate()
     .then(function() {
@@ -94,8 +111,8 @@ app.get("/", function(req, res){
 app.get("/about", function(req, res){
     res.render('about');
 })
-
-app.get("/employees", function(req, res) {
+// employee routes
+app.get("/employees", ensureLogin, function(req, res) {
     if (req.query.status) {
         dataservice.getEmployeesByStatus(req.query["status"]).then(function(statusEmployee) {
             res.render("employees", {employees: statusEmployee});
@@ -130,7 +147,7 @@ app.get("/employees", function(req, res) {
         });
     }
 })
-app.get("/employees/add", function(req, res) {
+app.get("/employees/add", ensureLogin, function(req, res) {
     dataservice.getDepartments().then(function(data){
         res.render("addEmployee", {departments: data});
     }).catch(function() {
@@ -138,7 +155,7 @@ app.get("/employees/add", function(req, res) {
     })
     
 })
-app.post("/employees/add", function(req, res) {
+app.post("/employees/add", ensureLogin, function(req, res) {
     dataservice.addEmployee(req.body).then(function() {
         res.redirect("/employees");
     }).catch(function(error){
@@ -152,7 +169,7 @@ app.post("/employees/add", function(req, res) {
 //         res.render("employee",{message: error});
 //     })
 // })
-app.get("/employee/:empNum", (req, res) => {
+app.get("/employee/:empNum", ensureLogin, (req, res) => {
     // initialize an empty object to store the values
     let viewData = {};
     dataservice.getEmployeeByNum(req.params.empNum).then((data) => {
@@ -181,14 +198,14 @@ app.get("/employee/:empNum", (req, res) => {
             }
     });
 });
-app.get("/employee/delete/:empNum", function(req, res) {
+app.get("/employee/delete/:empNum", ensureLogin, function(req, res) {
     dataservice.deleteEmployeeByNum(req.params.empNum).then(function() {
         res.redirect("/employees");
         }).catch(function() {
             res.status(500).send("Unable to Remove Employee / Employee not found");
     })
 });
-app.post("/employee/update", (req, res) => {
+app.post("/employee/update", ensureLogin, (req, res) => {
     console.log(req.body);
     dataservice.updateEmployee(req.body).then(function() {
         res.redirect("/employees");
@@ -196,8 +213,8 @@ app.post("/employee/update", (req, res) => {
         res.status(500).send("Unable to Update Employee");
        });
 });
-
-app.get("/departments", function(req, res) {
+// department routes
+app.get("/departments", ensureLogin, function(req, res) {
     dataservice.getDepartments().then(function(departments) {
         if (departments.length > 0) {
             res.render("departments", {departments: departments})
@@ -209,17 +226,17 @@ app.get("/departments", function(req, res) {
         res.render("departments",{message: error});
     });
 })
-app.get("/departments/add", function(req, res) {
+app.get("/departments/add", ensureLogin, function(req, res) {
     res.render('addDepartment');
 })
-app.post("/departments/add", function(req, res) {
+app.post("/departments/add", ensureLogin, function(req, res) {
     dataservice.addDepartment(req.body).then(function() {
         res.redirect("/departments");
     }).catch((err)=>{
         res.status(500).send("Unable to Add Department");
        });
 })
-app.post("/department/update", function(req, res) {
+app.post("/department/update", ensureLogin, function(req, res) {
     console.log(req.body);
     dataservice.updateDepartment(req.body).then(function() {
         res.redirect("/departments");
@@ -227,7 +244,7 @@ app.post("/department/update", function(req, res) {
         res.status(500).send("Unable to Update Department");
        });
 })
-app.get("/department/:value", function(req, res) {
+app.get("/department/:value", ensureLogin, function(req, res) {
     dataservice.getDepartmentById(req.params.value).then(function(department) {
         if (department == null) {
             res.status(404).send("Department Not Found");
@@ -237,14 +254,14 @@ app.get("/department/:value", function(req, res) {
         res.status(404).send("Department Not Found");
     })
 })
-
-app.get("/images/add", function(req, res) {
+// image routes
+app.get("/images/add", ensureLogin, function(req, res) {
     res.render('addImage');
 })
-app.post("/images/add", upload.single("imageFile"), (req, res) => {
+app.post("/images/add", ensureLogin, upload.single("imageFile"), (req, res) => {
     res.redirect("/images");
 })
-app.get("/images", function(req, res) {
+app.get("/images", ensureLogin, function(req, res) {
     fs.readdir("./public/images/uploaded", function(err, items) {
         if (err) {
             reject("Failure to read file");
@@ -256,14 +273,52 @@ app.get("/images", function(req, res) {
     })
     
 })
+// user login/logout/register/history routes
+app.get("/login", function(req, res) {
+    res.render('login');
+})
+app.get("/register", function(req, res) {
+    res.render('register');
+})
+app.post("/register", function(req, res) {
+    dataserviceAuth.registerUser(req.body).then(function(){
+        res.render('register', {successMessage: "User created"});
+    }).catch(function(err){
+        res.render('register', {errorMessage: err, userName: req.body.userName});
+    });
+})
+app.post("/login", function(req, res) {
+    req.body.userAgent = req.get('User-Agent');
+    dataserviceAuth.checkUser(req.body).then(function(userData) {
+        req.session.user = {
+            userName: userData.userName, // complete it with authenticated user's userName
+            email: userData.email, // complete it with authenticated user's email
+            loginHistory: userData.loginHistory // complete it with authenticated user's loginHistory
+        }
+        res.redirect('/employees');
+    }).catch(function(err) {
+        res.render('login', {errorMessage: err, userName: req.body.userName});
+    });
+})
+app.get("/logout", (req, res)=>{
+    req.session.reset();
+    res.redirect("/login");
+});
+app.get("/userHistory", ensureLogin, function(req, res){
+    res.render('userHistory');
+});
 
 app.use((req, res)=> {
     res.status(404).send("Page not found");
 })
 
-dataservice.initialize().then(function() {
-    app.listen(HTTP_PORT, onHttpStart);
-}).catch(function(error) {
-    res.json(error);
-})
+dataservice.initialize()
+.then(dataserviceAuth.initialize)
+.then(function(){
+ app.listen(HTTP_PORT, function(){
+ console.log("app listening on: " + HTTP_PORT)
+ });
+}).catch(function(err){
+ console.log("unable to start server: " + err);
+});
 
